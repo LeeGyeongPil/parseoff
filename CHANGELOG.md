@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-11
+
+### Fixed
+- Install hints for optional parsers now work in a cloned checkout: `uv sync --extra markitdown`, `uv sync --extra docling` and `uv pip install pymupdf4llm` replace the `pip install "parseoff[...]"` and `pip install pymupdf4llm` hints, which failed because parseoff is not on PyPI and the project venv has no pip. Changed in `parseoff doctor`, the `skipped ...` lines, README tables and screenshots.
+
+### Changed
+- README: note that syncing extras one at a time removes the earlier ones, and a looser test duration (10-20 s).
+
+### Known limitations
+- `parseoff doctor` still shows the install hint on rows of parsers that are already installed.
+- `parseoff doctor` reports pymupdf4llm as 0.0 MB on disk (only the thin wrapper package is measured, not pymupdf).
+- The demo screenshot `03-demo.png` shows `(cached)` next to parsers because it was captured on a second run; a first run does not show it.
+
 ## [0.1.0] - 2026-11-10
 
 ### Added
