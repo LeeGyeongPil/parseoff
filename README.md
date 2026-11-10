@@ -23,7 +23,7 @@ cd parseoff
 uv run parseoff --version
 ```
 ```text
-parseoff 0.1.0
+parseoff 0.1.1
 ```
 
 - 위 방법(clone 후 `uv run`)이 확인된 설치 방법입니다. 처음 `uv run` 을 하면 의존 패키지를 내려받습니다.
@@ -46,8 +46,8 @@ parseoff demo - practice mode: 3 synthetic PDFs, real parsers
   two-column.pdf: pdfminer ok 0.10s
 
 3 documents, parsers: pypdf, pdfplumber, pdfminer
-skipped markitdown: not installed (uv sync --extra markitdown (or pip install "parseoff[markitdown]"))
-skipped pymupdf4llm: not installed (pip install pymupdf4llm; AGPL-3.0, check its terms)
+skipped markitdown: not installed (uv sync --extra markitdown)
+skipped pymupdf4llm: not installed (uv pip install pymupdf4llm; AGPL-3.0, check its terms)
 skipped docling: opt-in only: add docling to --parsers (model download on first run)
 FAIL 1, WARN 2, INFO 5 - exit 0 (use --strict to fail)
 report: demo-out/report/index.html
@@ -199,8 +199,10 @@ report: custom-out/report/index.html
 | pdfplumber | MIT | 41 MB | 기본 포함, 표를 GFM 으로 | 필요 없음 |
 | pdfminer.six | MIT | pdfplumber 에 포함 | 기본 포함 | 필요 없음 |
 | markitdown | MIT | 147 MB (대부분 onnxruntime) | 쪽별로 나눠 변환 | `uv sync --extra markitdown` |
-| pymupdf4llm | AGPL-3.0 또는 상업 | 214 MB | 설치돼 있으면 자동 감지. **extras 에 넣지 않음** | `pip install pymupdf4llm` |
+| pymupdf4llm | AGPL-3.0 또는 상업 | 214 MB | 설치돼 있으면 자동 감지. **extras 에 넣지 않음** | `uv pip install pymupdf4llm` (`uv sync` 후 다시 설치 필요할 수 있음) |
 | docling | MIT | 측정 안 함(torch, 큼) | 실험적. `--parsers` 에 적어야만 실행, 첫 실행에 모델 다운로드 | `uv sync --extra docling` |
+
+extra 를 하나씩 따로 `uv sync --extra …` 하면 앞서 넣은 extra 가 지워집니다. 둘 이상 쓸 때는 `uv sync --extra markitdown --extra docling` 처럼 한 번에 지정하세요.
 
 pymupdf4llm 은 AGPL 이라서 parseoff 의 extras 에 넣지 않았습니다. 직접 설치하면 호출만 하며, 배지와 경고(LICENSE_COPYLEFT)가 붙습니다. 라이선스 확인은 본인 책임입니다. marker 는 모델 가중치 조건이 있어 아직 지원하지 않습니다.
 
@@ -238,6 +240,7 @@ flowchart LR
 | 커버리지가 `null` / `EMPTY_TEXT_LAYER` | 스캔·이미지뿐인 쪽(텍스트 레이어 없음) | OCR 이 필요합니다. 텍스트 파서 비교로는 해결되지 않습니다 |
 | 커버리지는 100% 인데 결과가 이상함 | 커버리지는 글자만 세고 표·순서를 못 봄 | 일치도·표 개수를 같이 보고, 리포트에서 해당 쪽을 눈으로 확인하세요 |
 | `skipped markitdown: not installed` | 선택 파서가 설치되지 않음 | 메시지에 적힌 설치 명령을 실행하세요. clone 해서 쓰는 경우 `uv sync --extra markitdown` 입니다 |
+| `skipped pymupdf4llm: not installed` | AGPL 이라 extras 에 없음 | `uv pip install pymupdf4llm` (`uv sync` 후에는 다시 설치). 라이선스는 직접 확인하세요 |
 | `skipped docling: opt-in only` | docling 은 자동 실행하지 않음 | `--parsers pypdf,pdfplumber,docling` 처럼 명시(첫 실행에 모델 다운로드) |
 | 같은 결과가 계속 나옴 | 캐시(파일·파서·버전이 같음) | `--fresh` 를 붙이세요 |
 | `cannot import module ... for custom parser` | `--custom` 모듈이 현재 폴더에 없음 | 모듈이 있는 폴더에서 실행하거나 `PARSEOFF_PATH` 를 지정하세요. 터미널에는 `mine error` 아래 줄에 원인이 나오고, 전체 문구는 `summary.md` 의 `PARSER_ERROR` 소견에 있습니다 |
@@ -249,10 +252,10 @@ flowchart LR
 uv run pytest -q
 ```
 ```text
-..........................                                               [100%]
+..............................                                           [100%]
 ```
 
-27개 테스트가 네트워크·모델 다운로드 없이, 선택 파서가 없는 상태에서 통과합니다(타임아웃 시험이 있어 10초쯤 걸립니다). 버그·제안은 이슈로 남겨 주세요. 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
+30개 테스트가 네트워크·모델 다운로드 없이, 선택 파서가 없는 상태에서 통과합니다(타임아웃 시험이 있어 10~20초쯤 걸립니다). 버그·제안은 이슈로 남겨 주세요. 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
 
 ## 더 알아보기
 - [pypdf](https://pypdf.readthedocs.io/) · [pdfplumber](https://github.com/jsvine/pdfplumber) · [pdfminer.six](https://github.com/pdfminer/pdfminer.six) · [markitdown](https://github.com/microsoft/markitdown) · [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) · [docling](https://github.com/docling-project/docling) (모두 2026-11-10 확인한 공식 저장소·문서)
