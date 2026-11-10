@@ -29,8 +29,8 @@ def test_optional_parsers_skipped_or_normalized(
     specs, skipped = select_parsers(None, [])
     assert _names(specs) == ["pypdf", "pdfplumber", "pdfminer"]
     reasons = {s.name: s.reason for s in skipped}
-    assert "parseoff[markitdown]" in reasons["markitdown"]
-    assert "pip install pymupdf4llm" in reasons["pymupdf4llm"]
+    assert "uv sync --extra markitdown" in reasons["markitdown"]
+    assert "uv pip install pymupdf4llm" in reasons["pymupdf4llm"]
     assert "opt-in" in reasons["docling"]
 
     # 2) everything installed -> docling still does NOT run unless named in --parsers
@@ -117,3 +117,45 @@ def test_unknown_parser_and_custom_spec_errors() -> None:
     with pytest.raises(ValueError, match="invalid custom parser name"):
         parse_spec("bad name=mod:fn")
     assert parse_spec("mine=pkg.sub:to_pages").function == "to_pages"
+
+
+def test_install_hints_work_for_clone_uv_install() -> None:
+    """Install hints must be commands that work in a clone + uv setup (parseoff is not on PyPI)."""
+    from parseoff.registry import REGISTRY  # noqa: PLC0415
+
+    hints = {n: i.install_hint for n, i in REGISTRY.items() if i.install_hint}
+    assert hints["markitdown"].startswith("uv sync --extra markitdown")
+    assert hints["docling"].startswith("uv sync --extra docling")
+    assert hints["pymupdf4llm"] == "uv pip install pymupdf4llm; AGPL-3.0, check its terms"
+    for hint in hints.values():
+        assert 'pip install "parseoff[' not in hint
+        assert not hint.startswith("pip install")
+
+
+def test_optional_adapter_errors_use_working_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    import importlib
+
+    from parseoff.adapters import optional
+
+    real_import = importlib.import_module
+
+    def fake_import(name, *a, **k):
+        if name.split(".")[0] in {"markitdown", "pymupdf4llm", "docling"}:
+            raise ImportError(name)
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    msgs = []
+    for fn in (optional.markitdown_convert, optional.pymupdf4llm_convert, optional.docling_convert):
+        with pytest.raises(RuntimeError) as err:
+            fn("x.pdf", [1])
+        msgs.append(str(err.value))
+    assert all('pip install "parseoff[' not in m for m in msgs)
+    assert "uv pip install pymupdf4llm" in msgs[1] and "AGPL-3.0" in msgs[1]
+
+
+def test_readme_install_commands_match() -> None:
+    readme = (Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+    assert 'pip install "parseoff[' not in readme
+    row = next(ln for ln in readme.splitlines() if ln.startswith("| pymupdf4llm"))
+    assert "`uv pip install pymupdf4llm`" in row

@@ -51,19 +51,19 @@ REGISTRY: dict[str, ParserInfo] = {
         ),
         ParserInfo(
             "markitdown", ("markitdown",), "markitdown", "MIT", 147.0, "147 MB", True, False,
-            install_hint='uv sync --extra markitdown (or pip install "parseoff[markitdown]")',
+            install_hint='uv sync --extra markitdown',
             note="most of the size is onnxruntime; page-split (one conversion per page)",
         ),
         ParserInfo(
             "pymupdf4llm", ("pymupdf4llm", "pymupdf"), "pymupdf4llm", "AGPL-3.0 or commercial",
             214.0, "214 MB", True, False, copyleft=True,
-            install_hint="pip install pymupdf4llm; AGPL-3.0, check its terms",
+            install_hint="uv pip install pymupdf4llm; AGPL-3.0, check its terms",
             note="detected only if you installed it; not an extra of parseoff",
         ),
         ParserInfo(
             "docling", ("docling",), "docling", "MIT", None, "not measured (large, torch)",
             False, False, model_download=True,
-            install_hint='uv sync --extra docling (or pip install "parseoff[docling]")',
+            install_hint='uv sync --extra docling',
             note="experimental",
         ),
     )
