@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "parseoff"
+version = "0.1.0"
+description = "Compare PDF parsers side by side on your own documents - no ground truth needed."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["pdf", "parser", "rag", "benchmark", "document-parsing", "evaluation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Text Processing",
+]
+dependencies = [
+  "pypdf==7.0.0",
+  "pdfplumber==0.11.10",
+  "reportlab==5.1.0",
+  "pypdfium2>=5.15.2",
+  "pillow>=13.0.0",
+  "pdfminer.six>=20260107",
+]
+
+[project.optional-dependencies]
+# pymupdf4llm / pymupdf (AGPL-3.0) and marker (weights licence) are deliberately NOT extras.
+markitdown = ["markitdown[pdf]==0.1.9"]
+docling = ["docling==2.150.0"]
+
+[project.scripts]
+parseoff = "parseoff.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/parseoff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
