@@ -1,5 +1,7 @@
 # parseoff
 
+**한국어** | [English](README.en.md)
+
 > **English summary** — parseoff runs several PDF parsers (pypdf, pdfplumber, pdfminer, and markitdown / pymupdf4llm / docling when installed) on *your own* PDFs and shows their output next to the original page image, with metrics that need no ground truth, plus licence and install-size warnings. Use it when you pick a parser for a RAG ingestion step, or before upgrading one. Not on PyPI yet (planned): `git clone` the repo, then `uv run parseoff demo`.
 
 PDF 파서를 고를 때 파서마다 스크립트를 따로 짜서 출력 파일을 눈으로 비교하던 일을, 명령 하나(`parseoff run ./내폴더`)로 대신해 주는 CLI 입니다. 모든 처리는 내 컴퓨터에서만 일어납니다.
