@@ -1,25 +1,23 @@
 # parseoff
 
-**한국어** | [English](README.en.md)
+**English** | [한국어](README.ko.md)
 
-> **English summary** — parseoff runs several PDF parsers (pypdf, pdfplumber, pdfminer, and markitdown / pymupdf4llm / docling when installed) on *your own* PDFs and shows their output next to the original page image, with metrics that need no ground truth, plus licence and install-size warnings. Use it when you pick a parser for a RAG ingestion step, or before upgrading one. Not on PyPI yet (planned): `git clone` the repo, then `uv run parseoff demo`.
+parseoff runs several PDF parsers (pypdf, pdfplumber, pdfminer, and markitdown / pymupdf4llm / docling when installed) on *your own* PDFs and shows their output next to the original page image, with metrics that need no ground truth, plus licence and install-size warnings. One command (`parseoff run ./내폴더`, where `내폴더` means "my folder") replaces writing a script per parser and comparing output files by eye, and everything is processed on your own computer. Use it when you pick a parser for a RAG ingestion step, or before upgrading one. Not on PyPI yet (planned): `git clone` the repo, then `uv run parseoff demo`.
 
-PDF 파서를 고를 때 파서마다 스크립트를 따로 짜서 출력 파일을 눈으로 비교하던 일을, 명령 하나(`parseoff run ./내폴더`)로 대신해 주는 CLI 입니다. 모든 처리는 내 컴퓨터에서만 일어납니다.
+![A report where three parsers read a two-column page in different orders, shown side by side with the original image](docs/images/01-hero.png)
+*One page of the report made by `parseoff demo`. The original is on the left and the per-parser results are on the right. It is the same page, but each parser reads it in a different order.*
 
-![두 단짜리 페이지를 세 파서가 서로 다른 순서로 읽은 결과가 원본 이미지 옆에 나란히 보이는 리포트](docs/images/01-hero.png)
-*`parseoff demo` 가 만든 리포트의 한 페이지. 왼쪽이 원본, 오른쪽이 파서별 결과. 같은 페이지인데 파서마다 읽는 순서가 다릅니다.*
+## Who it is for
+- People choosing, for the first time, a parser to turn PDFs into text for RAG or document search
+- People who want to see how results change on their own documents before upgrading a parser version
+- People who cannot upload documents to an external service and need to compare only parsers that run offline
 
-## 이런 분께
-- RAG·문서 검색용으로 PDF 를 텍스트로 바꿀 파서를 처음 고르는 분
-- 파서 버전을 올리기 전에, 내 문서에서 결과가 어떻게 달라지는지 보고 싶은 분
-- 문서를 외부 서비스에 올릴 수 없어서, 오프라인으로 돌아가는 파서만 비교해야 하는 분
+## Installation
 
-## 설치
-
-전제: Python 3.11~3.13(레포의 `.python-version` 은 3.12 라 uv 가 그 버전을 고릅니다. 3.14 이상은 선택 파서의 의존 패키지 휠이 없어 지원하지 않습니다), [uv](https://docs.astral.sh/uv/).
+Prerequisites: Python 3.11-3.13 (the repo's `.python-version` is 3.12, so uv picks that version; 3.14 and later are not supported because the optional parsers' dependency packages have no wheels for it), [uv](https://docs.astral.sh/uv/).
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh   # uv 가 없다면
+curl -LsSf https://astral.sh/uv/install.sh | sh   # if you do not have uv
 git clone https://github.com/LeeGyeongPil/parseoff
 cd parseoff
 uv run parseoff --version
@@ -28,14 +26,14 @@ uv run parseoff --version
 parseoff 0.1.1
 ```
 
-- 위 방법(clone 후 `uv run`)이 확인된 설치 방법입니다. 처음 `uv run` 을 하면 의존 패키지를 내려받습니다.
-- PyPI 게시는 예정입니다(아직 아님). 게시되면 `uvx parseoff demo` 로 바로 실행하게 됩니다. 공개 후에는 `uv tool install git+https://github.com/LeeGyeongPil/parseoff` 도 쓸 수 있습니다.
-- 최소 리눅스 환경에서는 `git`, `curl`, 그리고 Python 이 필요합니다. 그 밖의 시스템 패키지는 필요 없습니다(PDF 렌더링은 `pypdfium2` 휠에 들어 있습니다).
-- 선택 파서(기본에는 없음): `uv sync --extra markitdown` (MIT, 설치 약 147 MB). 아래 "파서 추가와 라이선스" 참고.
+- The method above (clone, then `uv run`) is the confirmed way to install. The first `uv run` downloads the dependency packages.
+- Publishing to PyPI is planned (not yet). Once published, you will run it directly with `uvx parseoff demo`. After the public release, `uv tool install git+https://github.com/LeeGyeongPil/parseoff` will also work.
+- On a minimal Linux environment, you need `git`, `curl` and Python. No other system packages are needed (PDF rendering is included in the `pypdfium2` wheel).
+- Optional parser (not in the default install): `uv sync --extra markitdown` (MIT, about 147 MB installed). See "Adding parsers and licences" below.
 
-## 빠르게 시작하기
+## Quick start
 
-먼저 **연습용(mock) 모드**인 `demo` 를 돌려 봅니다. 합성 PDF 3개를 코드가 만들어 주고(그래서 내 문서가 없어도 됩니다), 파서는 진짜로 돌립니다. 실제 모드(`run`)와 다른 점은 입력 문서뿐입니다. 합성 문서는 아주 단순해서 실제 문서보다 차이가 뚜렷하게 보입니다.
+First run `demo`, the **practice (mock) mode**. The code makes 3 synthetic PDFs (so you do not need documents of your own), and the parsers really run. The only difference from the real mode (`run`) is the input documents. The synthetic documents are very simple, so the differences look clearer than on real documents.
 
 ```bash
 uv run parseoff demo --out demo-out
@@ -55,39 +53,40 @@ FAIL 1, WARN 2, INFO 5 - exit 0 (use --strict to fail)
 report: demo-out/report/index.html
 ```
 
-![demo 실행 화면: 세 문서를 세 파서로 처리하고 FAIL 1, WARN 2, INFO 5 를 요약한다](docs/images/03-demo.png)
-*실행 화면. 시간(초)은 컴퓨터마다 다릅니다.*
+![demo run screen: processes three documents with three parsers and summarizes FAIL 1, WARN 2, INFO 5](docs/images/03-demo.png)
+*The run screen. The times (seconds) differ from computer to computer.*
 
-- `FAIL 1, WARN 2, INFO 5` 는 **소견(finding)** 개수입니다. FAIL 은 "이대로 쓰면 문제", WARN 은 "눈으로 확인할 것", INFO 는 참고입니다.
-- 소견이 있어도 종료코드는 0 입니다(`--strict` 를 줄 때만 1).
-- `demo-out/report/index.html` 을 브라우저로 여세요. 서버도 인터넷도 필요 없는 정적 파일입니다. 출력 폴더(`demo-out/`) 바로 아래에 `summary.json`(기계용)과 `summary.md`(사람용)도 생깁니다.
+- `FAIL 1, WARN 2, INFO 5` are the counts of **findings**. FAIL means "a problem if used as is", WARN means "check by eye", and INFO is for reference.
+- The exit code is 0 even when there are findings (1 only with `--strict`).
+- Open `demo-out/report/index.html` in a browser. It is a static file that needs no server or internet. Directly under the output folder (`demo-out/`), `summary.json` (for machines) and `summary.md` (for people) are also created.
 
-내 문서로 돌릴 때는 폴더(또는 PDF 파일 하나)만 넘기면 됩니다.
+To run it on your own documents, just pass a folder (or a single PDF file).
 
 ```bash
 uv run parseoff run ./내-pdf-폴더 --out my-out --max-pages 20
 ```
+(`./내-pdf-폴더` means "my PDF folder".)
 
-## 사용법
+## Usage
 
-| 명령·옵션 | 하는 일 | 예 |
+| Command / option | What it does | Example |
 |---|---|---|
-| `doctor` | 알려진 파서 6종의 설치 여부·실제 버전·라이선스·설치 크기·경고를 표로 보여 줌 | `parseoff doctor` |
-| `demo` | 합성 PDF 3개를 만들어 기본 파서로 비교(연습용) | `parseoff demo --out demo-out` |
-| `run INPUT` | PDF 파일 또는 폴더(하위 폴더 포함)를 모든 설치된 파서로 비교 | `parseoff run ./docs` |
-| `--out DIR` | 출력 폴더(`run` 기본 `parseoff-out`, `demo` 기본 `demo-out`) | `--out my-out` |
-| `--parsers a,b` | 실행할 파서를 직접 지정(`docling` 은 여기에 적어야만 실행) | `--parsers pypdf,pdfplumber` |
-| `--max-pages N` | 문서마다 앞 N 쪽만 분석 | `--max-pages 20` |
-| `--timeout SEC` | (문서, 파서)마다 제한 시간, 기본 120 초 | `--timeout 60` |
-| `--custom NAME=module:function` | 내 파서를 같은 리포트에 추가(여러 번 가능) | 아래 참고 |
-| `--min-coverage X` / `--min-agreement X` | LOW_COVERAGE(기본 0.8) / LOW_AGREEMENT(기본 0.6) 기준 | `--min-agreement 0.7` |
-| `--strict` | FAIL 소견이 있으면 종료코드 1(CI 용) | `--strict` |
-| `--fresh` | 캐시된 파서 결과를 무시하고 다시 실행 | `--fresh` |
-| `--no-render` | 페이지 이미지를 만들지 않음 | `--no-render` |
+| `doctor` | Shows, as a table, whether each of the 6 known parsers is installed, its actual version, licence, install size and warnings | `parseoff doctor` |
+| `demo` | Makes 3 synthetic PDFs and compares them with the default parsers (practice) | `parseoff demo --out demo-out` |
+| `run INPUT` | Compares a PDF file or folder (including subfolders) with all installed parsers | `parseoff run ./docs` |
+| `--out DIR` | Output folder (`run` default `parseoff-out`, `demo` default `demo-out`) | `--out my-out` |
+| `--parsers a,b` | Choose the parsers to run yourself (`docling` runs only if listed here) | `--parsers pypdf,pdfplumber` |
+| `--max-pages N` | Analyze only the first N pages of each document | `--max-pages 20` |
+| `--timeout SEC` | Time limit per (document, parser), default 120 seconds | `--timeout 60` |
+| `--custom NAME=module:function` | Add your own parser to the same report (repeatable) | See below |
+| `--min-coverage X` / `--min-agreement X` | Thresholds for LOW_COVERAGE (default 0.8) / LOW_AGREEMENT (default 0.6) | `--min-agreement 0.7` |
+| `--strict` | Exit code 1 if there are FAIL findings (for CI) | `--strict` |
+| `--fresh` | Ignore cached parser results and run again | `--fresh` |
+| `--no-render` | Do not make page images | `--no-render` |
 
-종료코드: 0(정상, 소견이 있어도), 1(`--strict` 이고 FAIL 소견 있음), 2(사용 오류, 예: 없는 폴더).
+Exit codes: 0 (normal, even with findings), 1 (`--strict` and there are FAIL findings), 2 (usage error, e.g. a folder that does not exist).
 
-### 1. 설치 상태와 라이선스 확인
+### 1. Check install status and licences
 
 ```bash
 uv run parseoff doctor
@@ -102,45 +101,45 @@ pymupdf4llm  no         -         AGPL-3.0 or commercial  214 MB                
 docling      no         -         MIT                     not measured (large, torch)  -        experimental; WARNING model download on first run (local models: not found); ...
 ```
 
-(`notes` 열은 길어서 `...` 로 줄였습니다.) `install size` 는 2026-11-10 에 격리 환경에 설치해 잰 조사값이고, `version`·`on disk` 는 내 환경에서 읽은 값입니다. 라이선스·크기는 참고용이며 법률 자문이 아닙니다.
+(The `notes` column is long, so it is shortened with `...`.) `install size` is a researched value measured by installing into an isolated environment on 2026-11-10, while `version` and `on disk` are values read from your own environment. Licences and sizes are for reference and are not legal advice.
 
-![doctor 실행 화면: 파서별 설치 여부, 버전, 라이선스, 설치 크기, 경고가 한 표로 나온다](docs/images/02-doctor.png)
-*`doctor` 화면. 설치하기 전에 "AGPL 인가? 왜 200 MB 인가?" 를 확인할 수 있습니다.*
+![doctor run screen: per-parser install status, version, licence, install size and warnings in one table](docs/images/02-doctor.png)
+*The `doctor` screen. Before installing, you can check "is it AGPL? why 200 MB?"*
 
-### 2. 리포트 읽기
+### 2. Reading the report
 
-`index.html` 에는 세 가지가 있습니다. 문서 × 파서 표(상태·시간·커버리지·표·제목 수), 파서 쌍별 일치도 행렬, 소견 목록입니다. 문서 이름을 누르면 쪽마다 **원본 이미지 + 파서별 결과**가 나란히 나옵니다.
+`index.html` has three things: a document x parser table (status, time, coverage, table and heading counts), a pairwise agreement matrix between parsers, and a list of findings. Click a document name and, page by page, the **original image + each parser's result** appear side by side.
 
-![index.html 개요: 문서와 파서 표, 일치도 행렬, 소견 목록](docs/images/04-index.png)
-*개요 화면. 소견의 배지를 보고 어느 문서의 어느 쪽을 열어 볼지 정합니다.*
+![index.html overview: document and parser table, agreement matrix, list of findings](docs/images/04-index.png)
+*The overview screen. Look at the findings' badges to decide which page of which document to open.*
 
-지표는 모두 **정답 없이** 계산됩니다. 그래서 한계가 있습니다.
+All metrics are computed **without ground truth**. That is why they have limits.
 
-| 지표 | 뜻 | 한계 |
+| Metric | Meaning | Limit |
 |---|---|---|
-| 커버리지 | PDF 자체의 텍스트 레이어에 있는 단어 중 파서가 가져온 비율 | 구조(표·순서)를 잃어도 100% 일 수 있음 |
-| 일치도 | 두 파서가 낸 단어 순서가 얼마나 같은지(0~1) | 낮다고 "누가 틀렸다"는 뜻이 아님. **눈으로 볼 페이지**라는 뜻 |
-| 표·제목 수 | GFM 표와 Markdown 제목(`#`)을 센 값 | 파서가 표를 못 찾아도 오류가 아님 |
-| 반복 줄 비율 | 여러 쪽에 되풀이되는 줄(머리말·꼬리말·쪽 번호)이 차지하는 비율 | 일부러 반복되는 문구도 센다 |
-| 추정 토큰 | 글자 수 / 4 (추정치) | 실제 토크나이저와 다름 |
+| Coverage | The share of the words in the PDF's own text layer that the parser captured | Can be 100% even when structure (tables, order) is lost |
+| Agreement | How similar the word order of two parsers' outputs is (0-1) | A low value does not mean "someone is wrong". It means **a page to look at by eye** |
+| Table and heading counts | Counts of GFM tables and Markdown headings (`#`) | Not an error if a parser fails to find tables |
+| Repeated-line ratio | The share taken by lines that repeat across pages (headers, footers, page numbers) | Deliberately repeated phrases are counted too |
+| Estimated tokens | Number of characters / 4 (an estimate) | Differs from a real tokenizer |
 
-### 3. 데모가 보여 주는 세 가지 교훈
+### 3. Three lessons the demo shows
 
-`demo` 의 합성 PDF 3개는 각각 하나씩을 보여 줍니다. 아래 수치는 이 데모를 실제로 돌려 얻은 값입니다. (합성 문서라 실제 문서보다 단순합니다.)
+The 3 synthetic PDFs of `demo` show one lesson each. The figures below are values obtained by actually running this demo. (They are synthetic documents, so simpler than real ones.)
 
-**① 표 구조 (`report-table.pdf` 1쪽)** — 표 개수는 pdfplumber 1, pypdf 0, pdfminer 0. 그런데 세 파서 모두 커버리지는 100% 입니다. 글자는 다 가져왔지만 표 모양은 pdfplumber 만 살렸다는 뜻입니다. 정답 없는 지표만으로는 구조 손실이 안 보인다는 한계의 실제 예입니다. 머리말 "ACME Handbook - draft" 와 쪽 번호가 반복되어 반복 줄 비율 23% 로 BOILERPLATE 경고도 뜹니다(RAG 청크에 머리말이 섞입니다).
+**① Table structure (`report-table.pdf` page 1)** — the table count is 1 for pdfplumber, 0 for pypdf, 0 for pdfminer. Yet coverage is 100% for all three parsers. That means they all took all the characters, but only pdfplumber kept the table shape. It is a real example of the limit that metrics without ground truth cannot show structural loss. The header "ACME Handbook - draft" and the page number repeat, giving a repeated-line ratio of 23% and a BOILERPLATE warning (the header gets mixed into RAG chunks).
 
-![report-table.pdf 1쪽: pdfplumber 는 Markdown 표로, 다른 파서는 줄로 풀어 낸 셀](docs/images/05-table.png)
-*표 쪽. 같은 셀 값이 파서마다 표 또는 줄 나열로 나옵니다.*
+![report-table.pdf page 1: pdfplumber as a Markdown table, other parsers with cells unrolled into lines](docs/images/05-table.png)
+*The table page. The same cell values come out as a table or as a list of lines depending on the parser.*
 
-**② 2단 읽기 순서 (`two-column.pdf` 1쪽)** — 파서 쌍별 일치도가 0.50~0.54 입니다. pypdf 는 오른쪽 단을 먼저, pdfminer 는 왼쪽 단을 먼저 읽고, pdfplumber 는 줄 단위로 두 단을 섞습니다(맨 위 그림). 같은 단어들이라 커버리지는 100% 지만 RAG 에는 읽는 순서가 중요합니다. 1단인 2쪽은 일치도 1.00 입니다. 임계값(0.6) 아래이므로 LOW_AGREEMENT 경고가 뜹니다.
+**② Two-column reading order (`two-column.pdf` page 1)** — the pairwise agreement between parsers is 0.50-0.54. pypdf reads the right column first, pdfminer reads the left column first, and pdfplumber mixes the two columns line by line (the top image). Coverage is 100% because the words are the same, but reading order matters for RAG. Since page 1 is below the threshold (0.6), a LOW_AGREEMENT warning appears. Page 2, which has one column, has an agreement of 1.00.
 
-**③ 텍스트 레이어 없는 페이지 (`scanned-like.pdf` 2쪽)** — 이미지뿐인 쪽입니다. 세 파서 모두 상태는 `ok`, 글자는 0 자입니다. 이때 커버리지는 0 이 아니라 계산 불가(`null`)로 기록하고, `EMPTY_TEXT_LAYER` FAIL 소견("OCR 이 필요")을 냅니다. 오류가 아니라 "파서가 할 수 없는 문서"라는 뜻입니다.
+**③ A page with no text layer (`scanned-like.pdf` page 2)** — a page that is only an image. All three parsers have status `ok` and 0 characters. In that case coverage is recorded as not computable (`null`) rather than 0, and an `EMPTY_TEXT_LAYER` FAIL finding ("OCR needed") is raised. It is not an error but means "a document the parser cannot handle".
 
-![scanned-like.pdf 2쪽: 원본은 이미지뿐이고 파서 결과는 모두 비어 있으며 EMPTY_TEXT_LAYER 배지가 보인다](docs/images/06-scanned.png)
-*스캔 쪽. 파서 결과가 비어 있고 FAIL 배지가 붙습니다.*
+![scanned-like.pdf page 2: the original is only an image, all parser results are empty, and an EMPTY_TEXT_LAYER badge shows](docs/images/06-scanned.png)
+*The scanned page. The parser results are empty and a FAIL badge is attached.*
 
-### 4. CI 에서 쓰기
+### 4. Using it in CI
 
 ```bash
 uv run parseoff run demo-out/samples --out strict-out --strict; echo "exit code: $?"
@@ -152,12 +151,12 @@ report: strict-out/report/index.html
 exit code: 1
 ```
 
-![strict 실행 화면: FAIL 이 있어 종료코드 1](docs/images/07-strict.png)
-*`--strict` 는 FAIL 소견이 있을 때만 종료코드 1 을 돌려줍니다.*
+![strict run screen: exit code 1 because there is a FAIL](docs/images/07-strict.png)
+*`--strict` returns exit code 1 only when there are FAIL findings.*
 
-### 5. 내 파서 넣기
+### 5. Adding your own parser
 
-함수 하나면 됩니다. 인자는 `(pdf_path, page_numbers)`(쪽 번호는 1부터), 반환은 요청한 쪽마다 문자열 하나인 목록입니다. 저장소의 [`examples/upper_parser.py`](examples/upper_parser.py):
+One function is enough. The arguments are `(pdf_path, page_numbers)` (page numbers start at 1), and it returns a list with one string per requested page. The repository's [`examples/upper_parser.py`](examples/upper_parser.py):
 
 ```python
 from pypdf import PdfReader
@@ -180,75 +179,75 @@ FAIL 1, WARN 1, INFO 0 - exit 0 (use --strict to fail)
 report: custom-out/report/index.html
 ```
 
-모듈은 현재 폴더(또는 환경변수 `PARSEOFF_PATH`)에서 찾습니다. **지정한 모듈의 코드는 그대로 실행되므로 믿을 수 있는 것만 쓰세요.** 내 파서는 코드가 바뀌어도 버전이 바뀌지 않아서 결과를 캐시하지 않습니다.
+The module is looked up in the current folder (or the environment variable `PARSEOFF_PATH`). **The code of the module you specify is run as is, so use only code you trust.** A custom parser's version does not change when its code changes, so its results are not cached.
 
-## 설정
+## Configuration
 
-설정 파일과 환경변수는 없습니다(API 키도 필요 없습니다). 모든 설정은 명령 인자입니다. 예외 두 가지:
+There are no configuration files or environment variables (no API key is needed either). All settings are command arguments. Two exceptions:
 
-- `PARSEOFF_PATH` — `--custom` 모듈을 찾을 폴더(OS 경로 구분자로 여러 개).
-- `DOCLING_ARTIFACTS_PATH` — docling 모델이 이미 있는 폴더. `doctor` 가 모델 존재 여부를 점검합니다.
+- `PARSEOFF_PATH` — folders where `--custom` modules are looked up (several, separated by the OS path separator).
+- `DOCLING_ARTIFACTS_PATH` — the folder where docling models already exist. `doctor` checks whether the models are present.
 
-**결과 폴더**: `report/`(HTML, 페이지 이미지 `img/*.png`), `raw/<문서>/<파서>.json`(파서 원본 결과, 캐시 겸용), `summary.json`, `summary.md`, `samples/`(demo 만). 캐시 키는 파일 sha256 + 파서 이름 + 설치된 파서 버전 + 쪽 목록이고 `status ok` 만 재사용합니다. `summary.json` 은 시각·절대경로가 없습니다. 캐시를 쓰면 같은 입력의 결과 파일이 같고, `--fresh` 로 다시 돌리면 파서 실행 시간(`seconds`)만 달라질 수 있습니다.
+**Result folder**: `report/` (HTML, page images `img/*.png`), `raw/<document>/<parser>.json` (the parser's raw result, which doubles as the cache), `summary.json`, `summary.md`, `samples/` (demo only). The cache key is the file sha256 + parser name + installed parser version + page list, and only `status ok` is reused. `summary.json` has no timestamps or absolute paths. With the cache, the same input gives the same result files, and when re-running with `--fresh`, only the parser run time (`seconds`) can differ.
 
-**개인정보**: 처리는 전부 내 컴퓨터에서 일어나고 네트워크를 쓰지 않습니다(선택 파서 docling 은 첫 실행에 모델을 내려받습니다). 단, 출력 폴더(`raw/`, `report/`)에는 **문서 내용과 페이지 이미지가 그대로 들어갑니다.** 민감한 문서의 리포트는 공유하지 마세요.
+**Privacy**: all processing happens on your own computer and uses no network (the optional parser docling downloads models on its first run). However, the output folders (`raw/`, `report/`) **contain the document contents and page images as they are.** Do not share reports of sensitive documents.
 
-### 파서 추가와 라이선스
+### Adding parsers and licences
 
-| 파서 | 라이선스 | 설치 크기(조사값, 2026-11-10) | 비고 | 설치 |
+| Parser | Licence | Install size (researched, 2026-11-10) | Notes | Install |
 |---|---|---|---|---|
-| pypdf | BSD-3-Clause | 1.8 MB | 기본 포함 | 필요 없음 |
-| pdfplumber | MIT | 41 MB | 기본 포함, 표를 GFM 으로 | 필요 없음 |
-| pdfminer.six | MIT | pdfplumber 에 포함 | 기본 포함 | 필요 없음 |
-| markitdown | MIT | 147 MB (대부분 onnxruntime) | 쪽별로 나눠 변환 | `uv sync --extra markitdown` |
-| pymupdf4llm | AGPL-3.0 또는 상업 | 214 MB | 설치돼 있으면 자동 감지. **extras 에 넣지 않음** | `uv pip install pymupdf4llm` (`uv sync` 후 다시 설치 필요할 수 있음) |
-| docling | MIT | 측정 안 함(torch, 큼) | 실험적. `--parsers` 에 적어야만 실행, 첫 실행에 모델 다운로드 | `uv sync --extra docling` |
+| pypdf | BSD-3-Clause | 1.8 MB | Included by default | Not needed |
+| pdfplumber | MIT | 41 MB | Included by default, tables as GFM | Not needed |
+| pdfminer.six | MIT | Included in pdfplumber | Included by default | Not needed |
+| markitdown | MIT | 147 MB (mostly onnxruntime) | Converts page by page | `uv sync --extra markitdown` |
+| pymupdf4llm | AGPL-3.0 or commercial | 214 MB | Auto-detected if installed. **Not in extras** | `uv pip install pymupdf4llm` (you may need to install it again after `uv sync`) |
+| docling | MIT | Not measured (torch, large) | Experimental. Runs only if listed in `--parsers`, model download on first run | `uv sync --extra docling` |
 
-extra 를 하나씩 따로 `uv sync --extra …` 하면 앞서 넣은 extra 가 지워집니다. 둘 이상 쓸 때는 `uv sync --extra markitdown --extra docling` 처럼 한 번에 지정하세요.
+If you run `uv sync --extra …` for one extra at a time, the extras you added earlier are removed. When you use more than one, specify them in a single call, as in `uv sync --extra markitdown --extra docling`.
 
-pymupdf4llm 은 AGPL 이라서 parseoff 의 extras 에 넣지 않았습니다. 직접 설치하면 호출만 하며, 배지와 경고(LICENSE_COPYLEFT)가 붙습니다. 라이선스 확인은 본인 책임입니다. marker 는 모델 가중치 조건이 있어 아직 지원하지 않습니다.
+pymupdf4llm is AGPL, so it was not put in parseoff's extras. If you install it yourself, parseoff only calls it, with a badge and a warning (LICENSE_COPYLEFT) attached. Checking the licence is your responsibility. marker is not supported yet because of its model-weight terms.
 
-## 동작 원리
+## How it works
 
 ```mermaid
 flowchart LR
-    A[PDF 파일·폴더] --> B[파서마다<br/>하위 프로세스 + 타임아웃]
-    B --> C[raw JSON<br/>캐시]
-    A --> D[PDF 텍스트 레이어<br/>+ 페이지 PNG]
-    C --> E[지표 계산]
+    A["PDF file or folder"] --> B["Per parser<br/>subprocess + timeout"]
+    B --> C["raw JSON<br/>cache"]
+    A --> D["PDF text layer<br/>+ page PNG"]
+    C --> E["Compute metrics"]
     D --> E
-    E --> F[소견<br/>FAIL / WARN / INFO]
-    F --> G[HTML 리포트<br/>summary.json / md]
+    E --> F["Findings<br/>FAIL / WARN / INFO"]
+    F --> G["HTML report<br/>summary.json / md"]
 ```
 
-1. **PDF 입력** — 파일 하나 또는 폴더(하위 폴더 포함)를 받습니다.
-2. **하위 프로세스 + 타임아웃** — (문서, 파서)마다 별도 프로세스(`python -m parseoff.worker`)로 돌립니다. 파서가 죽거나 멈춰도 다른 파서 결과는 정상으로 남고, 시간이 넘으면 그 프로세스만 종료합니다.
-3. **raw JSON·캐시** — 결과를 바로 `raw/` 에 쌓고, 같은 파일·파서·버전이면 다시 돌리지 않습니다(`--fresh` 로 무시).
-4. **텍스트 레이어·페이지 PNG** — pypdfium2 로 PDF 가 가진 텍스트와 페이지 이미지를 만듭니다. 이것이 커버리지의 기준선이 되고, 리포트의 원본 이미지가 됩니다.
-5. **지표 계산** — 커버리지, 파서 쌍별 일치도(표준 라이브러리 `difflib`), 표·제목 수, 반복 줄, 추정 토큰.
-6. **소견** — 규칙과 임계값으로 FAIL / WARN / INFO 를 붙입니다.
-7. **리포트** — 외부 리소스·스크립트가 없는 정적 HTML(파서가 낸 텍스트는 전부 HTML 이스케이프)과 `summary.json`·`summary.md`.
+1. **PDF input** — takes a single file or a folder (including subfolders).
+2. **Subprocess + timeout** — runs each (document, parser) in a separate process (`python -m parseoff.worker`). Even if a parser crashes or hangs, the other parsers' results remain intact, and when time runs out only that process is terminated.
+3. **raw JSON and cache** — results are stored in `raw/` right away, and the same file, parser and version are not run again (ignore with `--fresh`).
+4. **Text layer and page PNG** — pypdfium2 produces the text the PDF holds and the page images. This becomes the baseline for coverage and the report's original image.
+5. **Compute metrics** — coverage, pairwise agreement between parsers (standard library `difflib`), table and heading counts, repeated lines, estimated tokens.
+6. **Findings** — FAIL / WARN / INFO are attached by rules and thresholds.
+7. **Report** — static HTML with no external resources or scripts (all text produced by parsers is HTML-escaped), plus `summary.json` and `summary.md`.
 
-## 언제 쓰나
-- 이럴 때: 내 PDF 로 파서를 처음 고를 때, 파서 버전을 올릴 때, 문서를 외부에 올릴 수 없을 때(전부 로컬 실행). 정답 데이터가 없어도 "어느 쪽을 눈으로 볼지"를 좁혀 줍니다.
-- 이럴 땐 다른 도구: 정답 Markdown 과 점수로 파서를 겨루는 공개 벤치마크가 필요하면 [opendataloader-bench](https://github.com/opendataloader-project/opendataloader-bench) 같은 벤치마크, OCR 이 필요한 스캔 문서는 OCR 기능이 있는 파서(예: [docling](https://github.com/docling-project/docling)) 를 직접 사용하세요. 이 도구는 OCR 을 하지 않습니다.
-- 아직 없는 것: 정답 기반 점수·이전 실행과의 비교(`diff`)·marker 지원은 다음 계획입니다. HWP·DOCX 등 PDF 외 형식도 다루지 않습니다.
+## When to use it
+- Use it when: choosing a parser for the first time on your own PDFs, upgrading a parser version, or when you cannot upload documents externally (everything runs locally). Even without ground-truth data, it narrows down "which spots to look at by eye".
+- Use another tool when: if you need a public benchmark that ranks parsers by score against ground-truth Markdown, use a benchmark such as [opendataloader-bench](https://github.com/opendataloader-project/opendataloader-bench); for scanned documents that need OCR, use a parser with OCR (for example [docling](https://github.com/docling-project/docling)) directly. This tool does not do OCR.
+- Not there yet: ground-truth scoring, comparison with a previous run (`diff`) and marker support are planned next. Formats other than PDF, such as HWP and DOCX, are not handled either.
 
-## 자주 겪는 문제
+## Troubleshooting
 
-| 증상 | 원인 | 해결 |
+| Symptom | Cause | Fix |
 |---|---|---|
-| `error: ...: no such file or folder` (종료코드 2) | 입력 경로가 없거나 PDF 가 없는 폴더 | PDF 파일 또는 PDF 가 든 폴더를 넘기세요 |
-| 커버리지가 `null` / `EMPTY_TEXT_LAYER` | 스캔·이미지뿐인 쪽(텍스트 레이어 없음) | OCR 이 필요합니다. 텍스트 파서 비교로는 해결되지 않습니다 |
-| 커버리지는 100% 인데 결과가 이상함 | 커버리지는 글자만 세고 표·순서를 못 봄 | 일치도·표 개수를 같이 보고, 리포트에서 해당 쪽을 눈으로 확인하세요 |
-| `skipped markitdown: not installed` | 선택 파서가 설치되지 않음 | 메시지에 적힌 설치 명령을 실행하세요. clone 해서 쓰는 경우 `uv sync --extra markitdown` 입니다 |
-| `skipped pymupdf4llm: not installed` | AGPL 이라 extras 에 없음 | `uv pip install pymupdf4llm` (`uv sync` 후에는 다시 설치). 라이선스는 직접 확인하세요 |
-| `skipped docling: opt-in only` | docling 은 자동 실행하지 않음 | `--parsers pypdf,pdfplumber,docling` 처럼 명시(첫 실행에 모델 다운로드) |
-| 같은 결과가 계속 나옴 | 캐시(파일·파서·버전이 같음) | `--fresh` 를 붙이세요 |
-| `cannot import module ... for custom parser` | `--custom` 모듈이 현재 폴더에 없음 | 모듈이 있는 폴더에서 실행하거나 `PARSEOFF_PATH` 를 지정하세요. 터미널에는 `mine error` 아래 줄에 원인이 나오고, 전체 문구는 `summary.md` 의 `PARSER_ERROR` 소견에 있습니다 |
-| `uv run` 이 hardlink 경고를 냄 | 캐시와 프로젝트가 다른 파일시스템 | 무해합니다. 숨기려면 `UV_LINK_MODE=copy` |
+| `error: ...: no such file or folder` (exit code 2) | The input path does not exist or the folder has no PDFs | Pass a PDF file or a folder containing PDFs |
+| Coverage is `null` / `EMPTY_TEXT_LAYER` | A scanned or image-only page (no text layer) | OCR is needed. Comparing text parsers will not solve it |
+| Coverage is 100% but the result looks wrong | Coverage counts only characters and cannot see tables or order | Look at agreement and table counts together, and check that page by eye in the report |
+| `skipped markitdown: not installed` | The optional parser is not installed | Run the install command shown in the message. If you cloned the repo, it is `uv sync --extra markitdown` |
+| `skipped pymupdf4llm: not installed` | AGPL, so it is not in extras | `uv pip install pymupdf4llm` (install again after `uv sync`). Check the licence yourself |
+| `skipped docling: opt-in only` | docling is not run automatically | List it explicitly, as in `--parsers pypdf,pdfplumber,docling` (model download on first run) |
+| The same result keeps coming out | Cache (same file, parser and version) | Add `--fresh` |
+| `cannot import module ... for custom parser` | The `--custom` module is not in the current folder | Run from the folder containing the module or set `PARSEOFF_PATH`. In the terminal the cause appears on the line below `mine error`, and the full wording is in the `PARSER_ERROR` finding of `summary.md` |
+| `uv run` prints a hardlink warning | The cache and the project are on different filesystems | Harmless. To hide it, use `UV_LINK_MODE=copy` |
 
-## 개발·기여
+## Development and contributing
 
 ```bash
 uv run pytest -q
@@ -257,11 +256,11 @@ uv run pytest -q
 ..............................                                           [100%]
 ```
 
-30개 테스트가 네트워크·모델 다운로드 없이, 선택 파서가 없는 상태에서 통과합니다(타임아웃 시험이 있어 10~20초쯤 걸립니다). 버그·제안은 이슈로 남겨 주세요. 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
+The 30 tests pass without network or model downloads, with no optional parsers installed (they take about 10-20 seconds because of the timeout test). Please leave bugs and suggestions as issues. Change history is in [CHANGELOG.md](CHANGELOG.md).
 
-## 더 알아보기
-- [pypdf](https://pypdf.readthedocs.io/) · [pdfplumber](https://github.com/jsvine/pdfplumber) · [pdfminer.six](https://github.com/pdfminer/pdfminer.six) · [markitdown](https://github.com/microsoft/markitdown) · [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) · [docling](https://github.com/docling-project/docling) (모두 2026-11-10 확인한 공식 저장소·문서)
-- 확인한 버전: Python 3.12 / pypdf 7.0.0 / pdfplumber 0.11.10 / pdfminer.six 20260107 / reportlab 5.1.0 (macOS arm64, 2026-11-10)
+## Learn more
+- [pypdf](https://pypdf.readthedocs.io/) · [pdfplumber](https://github.com/jsvine/pdfplumber) · [pdfminer.six](https://github.com/pdfminer/pdfminer.six) · [markitdown](https://github.com/microsoft/markitdown) · [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) · [docling](https://github.com/docling-project/docling) (all official repositories and documentation checked on 2026-11-10)
+- Versions checked: Python 3.12 / pypdf 7.0.0 / pdfplumber 0.11.10 / pdfminer.six 20260107 / reportlab 5.1.0 (macOS arm64, 2026-11-10)
 
-## 라이선스
-MIT. 의존 파서의 라이선스는 위 표를 참고하세요(`demo` 의 합성 PDF 는 코드가 직접 생성하며 외부 데이터를 쓰지 않습니다).
+## License
+MIT. For the licences of dependent parsers, see the table above (the synthetic PDFs of `demo` are generated directly by code and use no external data).
