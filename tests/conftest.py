@@ -1,12 +1,25 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from parseoff import cli
 from parseoff.samples import create_samples
+
+# Tests expect the English screen: clear every variable that could pick Korean. This runs at import
+# time so session fixtures are covered too; the autouse fixture below repeats it for each test.
+LANG_VARS = ("PARSEOFF_LANG", "LC_ALL", "LC_MESSAGES", "LANG")
+for _name in LANG_VARS:
+    os.environ.pop(_name, None)
+
+
+@pytest.fixture(autouse=True)
+def _english_screen(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in LANG_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
 @pytest.fixture(scope="session")
