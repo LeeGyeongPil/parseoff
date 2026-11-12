@@ -23,7 +23,7 @@ cd parseoff
 uv run parseoff --version
 ```
 ```text
-parseoff 0.1.1
+parseoff 0.2.0
 ```
 
 - The method above (clone, then `uv run`) is the confirmed way to install. The first `uv run` downloads the dependency packages.
@@ -83,8 +83,32 @@ uv run parseoff run ./내-pdf-폴더 --out my-out --max-pages 20
 | `--strict` | Exit code 1 if there are FAIL findings (for CI) | `--strict` |
 | `--fresh` | Ignore cached parser results and run again | `--fresh` |
 | `--no-render` | Do not make page images | `--no-render` |
+| `--lang en\|ko` | Screen language (see "Screen language" below) | `--lang ko` |
 
 Exit codes: 0 (normal, even with findings), 1 (`--strict` and there are FAIL findings), 2 (usage error, e.g. a folder that does not exist).
+
+### Screen language (English / Korean)
+
+The terminal output, `--help`, error messages, the HTML report and `summary.md` come in English or Korean. The language is chosen in this order, and the first one that is set wins:
+
+1. `--lang en` or `--lang ko` (accepted before or after the command: `parseoff --lang ko doctor` and `parseoff doctor --lang ko` both work). If `--lang` is given both before and after the command, the first one wins.
+2. the environment variable `PARSEOFF_LANG` (`en` or `ko`). Any other value is treated as English.
+3. the locale: the first non-empty one of `LC_ALL`, `LC_MESSAGES`, `LANG`. A value that starts with `ko` (for example `ko_KR.UTF-8`) means Korean; anything else means English.
+
+```bash
+uv run parseoff demo --out demo-out --lang ko
+PARSEOFF_LANG=ko uv run parseoff doctor
+```
+
+The HTML report fixes its language when it is generated (`<html lang>` follows it); there is no switch inside the page. If a script compares terminal output or `summary.md` as text, set `PARSEOFF_LANG=en` or read `summary.json`.
+
+**What stays in English** (it is data, or it comes from other software):
+- `summary.json` in full (the machine-readable output, byte-identical in every language, including each finding's `message`), finding codes (`LOW_COVERAGE`, ...), levels (`FAIL`/`WARN`/`INFO`), parser names, status words (`ok`/`error`/`timeout`), commands such as `uv sync --extra markitdown`, licence names and the `--version` output
+- error text that a parser or PDF library produces (for example the cause after `mine error`, or `ValueError: the PDF has no pages` in a `cannot open` finding); only the sentence around it is translated
+- argparse messages in `--help` and argument errors that are not in the translation table (for example phrases added by newer Python versions); they appear in English
+- the text of your documents, and code comments
+
+The Korean-screen screenshots are used in [README.ko.md](README.ko.md) (`docs/images/<id>.ko.png`).
 
 ### 1. Check install status and licences
 
@@ -132,7 +156,7 @@ The 3 synthetic PDFs of `demo` show one lesson each. The figures below are value
 ![report-table.pdf page 1: pdfplumber as a Markdown table, other parsers with cells unrolled into lines](docs/images/05-table.png)
 *The table page. The same cell values come out as a table or as a list of lines depending on the parser.*
 
-**② Two-column reading order (`two-column.pdf` page 1)** — the pairwise agreement between parsers is 0.50-0.54. pypdf reads the right column first, pdfminer reads the left column first, and pdfplumber mixes the two columns line by line (the top image). Coverage is 100% because the words are the same, but reading order matters for RAG. Since page 1 is below the threshold (0.6), a LOW_AGREEMENT warning appears. Page 2, which has one column, has an agreement of 1.00.
+**② Two-column reading order (`two-column.pdf` page 1)** — the pairwise agreement between parsers is 0.50-0.54. pypdf reads the right column first, pdfminer reads the left column first, and pdfplumber mixes the two columns line by line (the top image). Coverage is 100% because the words are the same, but reading order matters for RAG. Page 1 is below the threshold (0.6), so a LOW_AGREEMENT warning appears. Page 2, which has one column, has an agreement of 1.00.
 
 **③ A page with no text layer (`scanned-like.pdf` page 2)** — a page that is only an image. All three parsers have status `ok` and 0 characters. In that case coverage is recorded as not computable (`null`) rather than 0, and an `EMPTY_TEXT_LAYER` FAIL finding ("OCR needed") is raised. It is not an error but means "a document the parser cannot handle".
 
@@ -183,8 +207,9 @@ The module is looked up in the current folder (or the environment variable `PARS
 
 ## Configuration
 
-There are no configuration files or environment variables (no API key is needed either). All settings are command arguments. Two exceptions:
+There are no configuration files (no API key is needed either). All settings are command arguments. Three environment variables:
 
+- `PARSEOFF_LANG` — screen language, `en` or `ko` (`--lang` wins over it; see "Screen language").
 - `PARSEOFF_PATH` — folders where `--custom` modules are looked up (several, separated by the OS path separator).
 - `DOCLING_ARTIFACTS_PATH` — the folder where docling models already exist. `doctor` checks whether the models are present.
 
@@ -253,10 +278,10 @@ flowchart LR
 uv run pytest -q
 ```
 ```text
-..............................                                           [100%]
+.....................................................................    [100%]
 ```
 
-The 30 tests pass without network or model downloads, with no optional parsers installed (they take about 10-20 seconds because of the timeout test). Please leave bugs and suggestions as issues. Change history is in [CHANGELOG.md](CHANGELOG.md).
+The 69 tests pass without network or model downloads, with no optional parsers installed (they take about 10-20 seconds because of the timeout test). Please leave bugs and suggestions as issues. Change history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Learn more
 - [pypdf](https://pypdf.readthedocs.io/) · [pdfplumber](https://github.com/jsvine/pdfplumber) · [pdfminer.six](https://github.com/pdfminer/pdfminer.six) · [markitdown](https://github.com/microsoft/markitdown) · [PyMuPDF4LLM](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) · [docling](https://github.com/docling-project/docling) (all official repositories and documentation checked on 2026-11-10)
