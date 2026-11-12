@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-13
+
+### Added
+- English and Korean screen language. Pick it with `--lang en|ko` (accepted before or after the command), the `PARSEOFF_LANG` environment variable, or the locale (`LC_ALL`, `LC_MESSAGES`, `LANG`, first one that is set); anything that does not start with `ko` means English.
+- Translated: `--help` of every command (including argparse's own `usage:`, `options` and error sentences), argument errors, usage errors, the progress and summary lines of `run` and `demo`, the `doctor` table, the HTML report (`<html lang>` follows the chosen language) and `summary.md`.
+- `src/parseoff/i18n.py` holds both message tables; tests check that both languages have the same keys and placeholders, that Korean sentences never put a fixed particle after a value, and that switching the language really changes the output.
+
+### Unchanged
+- `summary.json` is byte-identical in every language (finding messages stay English), as are finding codes, levels, parser names, exit codes, `--version` and the public Python functions (new `lang` arguments default to English).
+- Scripts that compare terminal output or `summary.md` as text can see Korean when the environment locale is Korean: read `summary.json` for machine use, or set `PARSEOFF_LANG=en`.
+
+### Known limitations
+- Text that comes from a parser or a PDF library (parser error text, `cannot open` causes, skip reasons of custom code, stderr) stays in its original language.
+
 ## [0.1.1] - 2026-11-11
 
 ### Fixed
