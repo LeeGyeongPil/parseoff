@@ -14,6 +14,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from ..i18n import LocalizedError
 from ..registry import BUILTIN_NAMES
 
 _NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,31}$")
@@ -31,19 +32,22 @@ class CustomSpec:
         return f"{self.name}={self.module}:{self.function}"
 
 
+class SpecError(LocalizedError, ValueError):
+    """A malformed ``--custom`` value. The message is English; ``text(lang)`` translates it."""
+
+
 def parse_spec(text: str) -> CustomSpec:
-    """Parse ``NAME=module:function``; raise ValueError with the fix on a malformed value."""
-    example = "for example: --custom mine=mypkg.parse:to_pages"
+    """Parse ``NAME=module:function``; raise SpecError (a ValueError) with the fix on a malformed value."""
     name, sep, target = text.partition("=")
     module, colon, function = target.partition(":")
     if not (sep and colon and name and module and function):
-        raise ValueError(f"invalid --custom value {text!r}: expected NAME=module:function ({example})")
+        raise SpecError("custom.bad_value", text=text)
     if not _NAME.match(name):
-        raise ValueError(f"invalid custom parser name {name!r}: use letters, digits, - or _ (max 32)")
+        raise SpecError("custom.bad_name", name=name)
     if name in BUILTIN_NAMES:
-        raise ValueError(f"custom parser name {name!r} is taken by a built-in parser; pick another name")
+        raise SpecError("custom.taken", name=name)
     if not _DOTTED.match(module) or not function.isidentifier():
-        raise ValueError(f"invalid --custom target {target!r}: expected module.path:function_name")
+        raise SpecError("custom.bad_target", target=target)
     return CustomSpec(name, module, function)
 
 

@@ -2,45 +2,63 @@
 
 from __future__ import annotations
 
-from .registry import REGISTRY, SURVEY_NOTE, disk_size_mb, docling_models_present, installed_version, is_installed
+import unicodedata
 
-HEADER = ("parser", "installed", "version", "license", "install size*", "on disk", "notes")
+from .i18n import DEFAULT_LANG, t
+from .registry import (
+    REGISTRY,
+    disk_size_mb,
+    docling_models_present,
+    install_hint,
+    installed_version,
+    is_installed,
+    size_text,
+    survey_note,
+)
+
+_HEADER_KEYS = ("parser", "installed", "version", "license", "size", "disk", "notes")
 
 
-def _notes(name: str) -> str:
+def _width(text: str) -> int:
+    """Columns the text takes in a terminal (Korean letters are two columns wide)."""
+    return sum(2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1 for ch in text)
+
+
+def _pad(text: str, width: int) -> str:
+    return text + " " * (width - _width(text))
+
+
+def _notes(name: str, lang: str) -> str:
     info = REGISTRY[name]
-    notes = [info.note]
+    notes = [t(f"note.{name}", lang)]
     if info.copyleft:
-        notes.append("WARNING copyleft licence")
+        notes.append(t("doctor.copyleft", lang))
     if info.model_download:
-        found = "found" if docling_models_present() else "not found"
-        notes.append(f"WARNING model download on first run (local models: {found}); opt-in via --parsers")
+        found = t("doctor.found" if docling_models_present() else "doctor.not_found", lang)
+        notes.append(t("doctor.model_download", lang, found=found))
     if not info.core:
-        notes.append(f"install: {info.install_hint}")
+        notes.append(t("doctor.install", lang, hint=install_hint(name, lang)))
     return "; ".join(n for n in notes if n)
 
 
-def render_doctor() -> str:
-    rows = [HEADER]
+def render_doctor(lang: str = DEFAULT_LANG) -> str:
+    header = tuple(t(f"doctor.h.{k}", lang) for k in _HEADER_KEYS)
+    rows = [header]
     for name, info in REGISTRY.items():
         installed = is_installed(name)
         disk = disk_size_mb(name) if installed else None
         rows.append((
             name,
-            "yes" if installed else "no",
+            t("doctor.yes" if installed else "doctor.no", lang),
             (installed_version(name) or "-") if installed else "-",
             info.license,
-            info.size_text,
+            size_text(name, lang),
             f"{disk:.1f} MB" if disk is not None else "-",
-            _notes(name),
+            _notes(name, lang),
         ))
-    widths = [max(len(r[i]) for r in rows) for i in range(len(HEADER) - 1)]
+    widths = [max(_width(r[i]) for r in rows) for i in range(len(header) - 1)]
     lines = []
     for r in rows:
-        lines.append("  ".join(r[i].ljust(widths[i]) for i in range(len(widths))) + "  " + r[-1])
-    lines += [
-        "",
-        f"* install size: {SURVEY_NOTE} (docling not measured). Versions and 'on disk' are read from your environment.",
-        "Licence and size columns are survey values, not legal advice: verify before you ship.",
-    ]
+        lines.append("  ".join(_pad(r[i], widths[i]) for i in range(len(widths))) + "  " + r[-1])
+    lines += ["", t("doctor.foot1", lang, survey=survey_note(lang)), t("doctor.foot2", lang)]
     return "\n".join(lines)

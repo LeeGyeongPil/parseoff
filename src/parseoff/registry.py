@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
 
+from .i18n import MESSAGES, t
+
 SURVEY_NOTE = "surveyed 2026-11-10, macOS arm64, Python 3.12, isolated install"
 HEAVY_INSTALL_MB = 100.0
 
@@ -122,3 +124,26 @@ def disk_size_mb(name: str) -> float | None:
                 continue
         return total / 1_000_000
     return None
+
+
+# --- screen text for registry facts (English values stay in REGISTRY, Korean ones live in i18n) ----
+
+
+def size_text(name: str, lang: str = "en") -> str:
+    """Surveyed install size as text; the two non-numeric ones ('part of ...', 'not measured') translate."""
+    return _facts_text(f"size.{name}", REGISTRY[name].size_text, lang)
+
+
+def install_hint(name: str, lang: str = "en") -> str:
+    """How to install a parser. Commands stay as they are; only the explanation is translated."""
+    return _facts_text(f"hint.{name}", REGISTRY[name].install_hint, lang)
+
+
+def survey_note(lang: str = "en") -> str:
+    return SURVEY_NOTE if lang == "en" else t("survey", lang)
+
+
+def _facts_text(key: str, default: str, lang: str) -> str:
+    if lang != "en" and key in MESSAGES.get(lang, {}):
+        return t(key, lang)
+    return default

@@ -22,6 +22,9 @@ class ParserOutput:
     error: str = ""
     stderr: str = ""
     cached: bool = False
+    # message key + parameters for errors written by parseoff itself (shown in the screen language)
+    error_key: str = ""
+    error_params: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -67,7 +70,9 @@ class DocReport:
 @dataclass(frozen=True)
 class Skipped:
     name: str
-    reason: str
+    reason: str  # English, as written to summary.json
+    key: str = ""  # message key + parameters, used to show the reason in the screen language
+    params: dict = field(default_factory=dict, compare=False)
 
 
 @dataclass(frozen=True)
@@ -78,6 +83,8 @@ class Finding:
     doc: str | None = None
     page: int | None = None
     parser: str | None = None
+    key: str = ""  # message key + parameters, used to show the message in the screen language
+    params: dict = field(default_factory=dict, compare=False)
 
 
 @dataclass(frozen=True)

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from . import findings, metrics, textlayer
 from .adapters.custom import CustomSpec
+from .i18n import LocalizedError, t
 from .model import DocReport, ParserOutput, RunReport, Skipped, Thresholds
 from .registry import REGISTRY, installed_version, is_installed
 
@@ -21,8 +22,11 @@ CACHE_SCHEMA = 1
 STDERR_LIMIT = 2000
 
 
-class UsageError(Exception):
-    """Bad input from the user (exit code 2). The message says how to fix it."""
+class UsageError(LocalizedError):
+    """Bad input from the user (exit code 2). The message says how to fix it.
+
+    ``str(error)`` is English. The command line shows ``error.text(lang)`` in the screen language.
+    """
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,7 @@ class RunOptions:
     render: bool = True
     thresholds: Thresholds = field(default_factory=Thresholds)
     demo: bool = False
+    lang: str = "en"  # language of the progress lines only; results never depend on it
 
 
 # --- document discovery -------------------------------------------------------------------------
@@ -51,17 +56,17 @@ class RunOptions:
 def find_pdfs(path: Path) -> list[tuple[str, Path]]:
     """Return (doc_id, file) pairs sorted by doc_id. doc_id is relative to the input folder."""
     if not path.exists():
-        raise UsageError(f"{path}: no such file or folder. Pass a PDF file or a folder that contains PDFs.")
+        raise UsageError("usage.no_such", path=path)
     if path.is_file():
         if path.suffix.lower() != ".pdf":
-            raise UsageError(f"{path}: not a .pdf file. Pass a PDF file or a folder that contains PDFs.")
+            raise UsageError("usage.not_pdf", path=path)
         return [(path.name, path)]
     found = sorted(
         ((p.relative_to(path).as_posix(), p) for p in path.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf"),
         key=lambda pair: pair[0],
     )
     if not found:
-        raise UsageError(f"{path}: no PDF files found. Pass a folder that contains .pdf files.")
+        raise UsageError("usage.no_pdfs", path=path)
     return found
 
 
@@ -94,19 +99,22 @@ def select_parsers(
     names = list(dict.fromkeys(requested)) if requested else [n for n, i in REGISTRY.items() if i.auto]
     unknown = [n for n in names if n not in REGISTRY]
     if unknown:
-        raise UsageError(f"unknown parser(s): {', '.join(unknown)}. Known parsers: {', '.join(REGISTRY)}")
+        raise UsageError("usage.unknown_parsers", unknown=", ".join(unknown), known=", ".join(REGISTRY))
     selected: list[ParserSpec] = []
     skipped: list[Skipped] = []
     for name in REGISTRY:  # registry order, so reports always list parsers in the same order
         info = REGISTRY[name]
         if name not in names:
             if not requested and not info.auto:
-                skipped.append(Skipped(name, f"opt-in only: add {name} to --parsers (model download on first run)"))
+                skipped.append(Skipped(name, t("skip.opt_in", name=name), "skip.opt_in", {"name": name}))
             continue
         if is_installed(name):
             selected.append(ParserSpec(name))
         else:
-            skipped.append(Skipped(name, f"not installed ({info.install_hint or 'install it first'})"))
+            skipped.append(Skipped(
+                name, t("skip.not_installed", hint=info.install_hint or t("skip.install_first")),
+                "skip.not_installed", {"name": name},
+            ))
     selected += [ParserSpec(c.name, c) for c in customs]
     return selected, skipped
 
@@ -170,7 +178,8 @@ def run_parser(
     if code is None:
         output = ParserOutput(
             spec.name, "timeout", version, float(options.timeout), [],
-            f"timed out after {options.timeout:g}s (raise --timeout or use --max-pages)", stderr,
+            t("err.timeout", seconds=options.timeout), stderr,
+            error_key="err.timeout", error_params={"seconds": options.timeout},
         )
     else:
         try:
@@ -183,7 +192,8 @@ def run_parser(
         except (OSError, ValueError):
             output = ParserOutput(
                 spec.name, "error", version, 0.0, [],
-                f"worker exited with code {code} without a result", stderr,
+                t("err.worker_exit", code=code), stderr,
+                error_key="err.worker_exit", error_params={"code": code},
             )
     tmp.unlink(missing_ok=True)
     stored = {"key": key, "output": {k: v for k, v in output.__dict__.items() if k != "cached"}}
@@ -196,6 +206,7 @@ def run_parser(
 
 def run_pipeline(options: RunOptions, progress: Callable[[str], None] = lambda _msg: None) -> RunReport:
     """Run every selected parser over every PDF and return a report with metrics and findings."""
+    lang = options.lang
     docs = find_pdfs(options.input_path)
     specs, skipped = select_parsers(options.parsers, options.customs)
     slugs = make_slugs([doc_id for doc_id, _ in docs])
@@ -221,7 +232,7 @@ def run_pipeline(options: RunOptions, progress: Callable[[str], None] = lambda _
         except Exception as exc:  # noqa: BLE001 - one unreadable file must not stop the run
             doc.open_error = _scrub(f"{type(exc).__name__}: {exc}", roots)
             doc.pages = []
-            progress(f"  {doc_id}: cannot open ({doc.open_error})")
+            progress(t("progress.cannot_open", lang, doc=doc_id, error=doc.open_error))
             continue
         doc.layer_chars = [len(t.strip()) for t in layer]
         if options.render:
@@ -229,15 +240,18 @@ def run_pipeline(options: RunOptions, progress: Callable[[str], None] = lambda _
                 textlayer.render_pages(pdf, doc.pages, img_dir, slug)
                 doc.rendered = True
             except Exception as exc:  # noqa: BLE001 - images are a convenience, not required
-                progress(f"  {doc_id}: page images skipped ({type(exc).__name__})")
+                progress(t("progress.images_skipped", lang, doc=doc_id, error=type(exc).__name__))
         for spec in specs:
             out = run_parser(spec, pdf, doc.sha256, doc.pages, options.out_dir / "raw" / slug, options, roots)
             doc.outputs[spec.name] = out
-            note = " (cached)" if out.cached else ""
-            progress(f"  {doc_id}: {spec.name} {out.status} {out.seconds:.2f}s{note}")
+            note = t("progress.cached", lang) if out.cached else ""
+            progress(t("progress.parser", lang, doc=doc_id, parser=spec.name, status=out.status,
+                       seconds=out.seconds, cached=note))
             if out.status != "ok" and out.error.strip():
                 # show the cause in the terminal too, not only in summary.md
-                progress(f"    {out.error.strip().splitlines()[0][:160]}")
+                # (our own messages are translated; text from a parser or library stays as it is)
+                cause = t(out.error_key, lang, **out.error_params) if out.error_key else out.error.strip()
+                progress(f"    {cause.splitlines()[0][:160]}")
         ok = {n: o.pages for n, o in doc.outputs.items() if o.status == "ok"}
         doc.metrics = metrics.compute_doc_metrics(doc.pages, layer, ok)
 
