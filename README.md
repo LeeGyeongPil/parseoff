@@ -14,7 +14,7 @@ parseoff runs several PDF parsers (pypdf, pdfplumber, pdfminer, and markitdown /
 
 ## Installation
 
-Prerequisites: Python 3.11-3.13 (the repo's `.python-version` is 3.12, so uv picks that version; 3.14 and later are not supported because the optional parsers' dependency packages have no wheels for it), [uv](https://docs.astral.sh/uv/).
+Prerequisites: Python 3.11.5-3.13 (the dev lock file targets 3.11.5 and newer; the repo's `.python-version` is 3.12, so uv picks that version; 3.14 and later are not supported because the optional parsers' dependency packages have no wheels for it), [uv](https://docs.astral.sh/uv/).
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # if you do not have uv
@@ -23,7 +23,7 @@ cd parseoff
 uv run parseoff --version
 ```
 ```text
-parseoff 0.2.0
+parseoff 0.2.1
 ```
 
 - The method above (clone, then `uv run`) is the confirmed way to install. The first `uv run` downloads the dependency packages.

@@ -14,7 +14,7 @@ PDF 파서를 고를 때 파서마다 스크립트를 따로 짜서 출력 파�
 
 ## 설치
 
-전제: Python 3.11~3.13(레포의 `.python-version` 은 3.12 라 uv 가 그 버전을 고릅니다. 3.14 이상은 선택 파서의 의존 패키지 휠이 없어 지원하지 않습니다), [uv](https://docs.astral.sh/uv/).
+전제: Python 3.11.5~3.13(개발용 lock 파일은 3.11.5 이상을 대상으로 합니다. 레포의 `.python-version` 은 3.12 라 uv 가 그 버전을 고릅니다. 3.14 이상은 선택 파서의 의존 패키지 휠이 없어 지원하지 않습니다), [uv](https://docs.astral.sh/uv/).
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # uv 가 없다면
@@ -23,7 +23,7 @@ cd parseoff
 uv run parseoff --version
 ```
 ```text
-parseoff 0.2.0
+parseoff 0.2.1
 ```
 
 - 위 방법(clone 후 `uv run`)이 확인된 설치 방법입니다. 처음 `uv run` 을 하면 의존 패키지를 내려받습니다.

@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-13
+
+### Security
+- Development lock file no longer contains `soupsieve` below 4.0.0 ([GHSA-mmhr-3c5m-f64f](https://github.com/advisories/GHSA-mmhr-3c5m-f64f), slow selector matching on deeply nested documents; patched in 4.0.0). `uv.lock` now pins `soupsieve` 4.1 and covers Python 3.11.5 and newer only, because 4.x needs Python >= 3.11.5. Package metadata and runtime behaviour are unchanged.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added
